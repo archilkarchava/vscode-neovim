@@ -31,6 +31,7 @@ import { MainController } from "./main_controller";
 
 export interface BufferManagerSettings {
     neovimViewportWidth: number;
+    neovimViewportHeight: number;
 }
 
 const LOG_PREFIX = "BufferManager";
@@ -591,7 +592,7 @@ export class BufferManager implements Disposable, NeovimRedrawProcessable, Neovi
         const win = await this.client.openWindow(bufId as any, false, {
             external: true,
             width: this.settings.neovimViewportWidth,
-            height: 100,
+            height: this.settings.neovimViewportHeight,
         });
         await this.client.setOption("eventignore", "");
         if (typeof win === "number") {
