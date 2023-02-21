@@ -15,7 +15,7 @@ import { NeovimClient } from "neovim";
 import { Logger } from "./logger";
 
 export const EXT_NAME = "vscode-neovim";
-export const EXT_ID = `asvetliakov.${EXT_NAME}`;
+export const EXT_ID = `archilkarchava.${EXT_NAME}`;
 
 export interface EditRange {
     start: number;
