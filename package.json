@@ -1,6 +1,6 @@
 {
     "name": "vscode-neovim",
-    "displayName": "VSCode Neovim (Neovim viewport sync disabled fork)",
+    "displayName": "VSCode Neovim (Fork)",
     "description": "VSCode Neovim Integration",
     "icon": "images/icon.png",
     "publisher": "archilkarchava",
