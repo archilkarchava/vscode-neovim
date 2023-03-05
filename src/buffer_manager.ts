@@ -168,7 +168,7 @@ export class BufferManager implements Disposable, NeovimRedrawProcessable, Neovi
     }
 
     public isExternalTextDocument(textDoc: TextDocument): boolean {
-        if (textDoc.uri.scheme === "output") {
+        if (["output", "gitlens"].includes(textDoc.uri.scheme)) {
             return true;
         }
         return this.externalTextDocuments.has(textDoc);
