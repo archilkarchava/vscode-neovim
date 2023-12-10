@@ -1,9 +1,9 @@
 {
     "name": "vscode-neovim",
-    "displayName": "VSCode Neovim",
+    "displayName": "VSCode Neovim (Fork)",
     "description": "Vim mode for VSCode, powered by Neovim",
     "icon": "images/icon.png",
-    "publisher": "asvetliakov",
+    "publisher": "archilkarchava",
     "extensionKind": [
         "ui",
         "workspace"
