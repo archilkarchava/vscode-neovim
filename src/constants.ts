@@ -7,7 +7,7 @@ export const GlyphChars = {
 };
 
 export const EXT_NAME = "vscode-neovim";
-export const EXT_ID = `asvetliakov.${EXT_NAME}`;
+export const EXT_ID = `archilkarchava.${EXT_NAME}`;
 
 export const CTRL_KEYS = [
     "a",
