@@ -10,7 +10,7 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "moduleResolution": "node",
-        "noUnusedLocals": true,
+        "noUnusedLocals": false,
         "noImplicitOverride": true,
         "forceConsistentCasingInFileNames": true,
         "strict": true /* enable all strict type-checking options */
