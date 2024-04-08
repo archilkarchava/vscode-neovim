@@ -206,7 +206,7 @@ export class CursorManager implements Disposable {
             }
             // lock typing in editor until cursor update is complete
             if (!this.cursorUpdatePromise.has(editor)) this.cursorUpdatePromise.set(editor, new ManualPromise());
-            this.updateCursorPosInEditor(editor, gridId);
+            this.getDebouncedUpdateCursorPos(editor)(editor, gridId);
         }
     }
 
