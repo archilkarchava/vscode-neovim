@@ -1,5 +1,7 @@
+---@diagnostic disable: deprecated
 local api, fn = vim.api, vim.fn
 
+local vscode = require("vscode.api")
 local util = require("vscode.util")
 
 local M = {}
@@ -207,8 +209,8 @@ function M.get_selections(win)
         -- ignore
       end
     else
-      local start_col = fn.virtcol2col(win, line_1, start_vcol)
-      local end_col = fn.virtcol2col(win, line_1, end_vcol)
+      local start_col = util.virtcol2col(win, line_1, start_vcol)
+      local end_col = util.virtcol2col(win, line_1, end_vcol)
       local start_col_offset = fn.strlen(util.get_char_at(line_1, start_col, buf) or "")
       local end_col_offset = fn.strlen(util.get_char_at(line_1, end_col, buf) or "")
       local range = vim.lsp.util.make_given_range_params(
@@ -279,5 +281,95 @@ function M.wslpath(path)
   end
   return vim.trim(ret)
 end
+
+--#region Buffer management
+
+--- 1. Implements :write and related commands, via buftype=acwrite. #521 #1260
+--- 2. Syncs buffer modified status with vscode. #247
+local function set_buffer_autocmd(buf)
+  api.nvim_create_autocmd({ "BufWriteCmd" }, {
+    buffer = buf,
+    callback = function(ev)
+      local current_name = api.nvim_buf_get_name(ev.buf)
+      local target_name = ev.match
+      local data = {
+        buf = ev.buf,
+        bang = vim.v.cmdbang == 1,
+        current_name = current_name,
+        target_name = target_name,
+      }
+      vscode.action("save_buffer", { args = { data } })
+    end,
+  })
+  api.nvim_create_autocmd({ "BufModifiedSet" }, {
+    buffer = buf,
+    callback = function(ev)
+      fn.VSCodeExtensionNotify("BufModifiedSet", {
+        buf = ev.buf,
+        modified = vim.bo[ev.buf].mod,
+      })
+    end,
+  })
+end
+
+---@class InitDocumentBufferData
+---@field buf number
+---@field lines string[]
+---@field editor_options EditorOptions
+---@field uri string
+---@field uri_data table
+---@field modifiable boolean
+---@field bufname string
+---@field modified boolean
+---@field filetype string|vim.NIL
+
+---@param data InitDocumentBufferData
+function M.init_document_buffer(data)
+  local buf = data.buf
+
+  -- 1. Force filetype before setting buffer name and lines, vim.filetype will handle the b:vscode_filetype
+  -- 2. Finally, set the filetype again just in case
+  local force_filetype = function()
+    if data.filetype and data.filetype ~= vim.NIL then
+      api.nvim_buf_set_var(buf, "vscode_filetype", data.filetype)
+      api.nvim_buf_set_option(buf, "filetype", data.filetype)
+    end
+  end
+
+  force_filetype()
+  -- Set bufname before setting lines so that filetype detection can work ???
+  api.nvim_buf_set_name(buf, data.bufname)
+  api.nvim_buf_set_lines(buf, 0, -1, false, data.lines)
+  -- set vscode controlled flag so we can check it neovim
+  api.nvim_buf_set_var(buf, "vscode_controlled", true)
+  -- In vscode same document can have different insertSpaces/tabSize settings
+  -- per editor; in Nvim it's per buffer. We assume here that these settings are
+  -- same for all editors.
+  api.nvim_buf_set_var(buf, "vscode_editor_options", data.editor_options)
+  api.nvim_buf_set_var(buf, "vscode_uri", data.uri)
+  api.nvim_buf_set_var(buf, "vscode_uri_data", data.uri_data)
+  -- force acwrite, which is similar to nofile, but will only be written via the
+  -- BufWriteCmd autocommand. #521 #1260
+  api.nvim_buf_set_option(buf, "buftype", "acwrite")
+  api.nvim_buf_set_option(buf, "buflisted", true)
+  api.nvim_buf_set_option(buf, "modifiable", data.modifiable)
+  api.nvim_buf_set_option(buf, "modified", data.modified)
+  force_filetype()
+
+  set_buffer_autocmd(buf)
+end
+
+---Reset undo tree for a buffer
+-- Called from extension when opening/creating new file in vscode to reset undo tree
+function M.clear_undo(buf)
+  local mod = vim.bo[buf].modified
+  local ul = vim.bo[buf].undolevels
+  api.nvim_buf_set_option(buf, "undolevels", -1)
+  api.nvim_buf_set_lines(buf, 0, 0, false, {})
+  api.nvim_buf_set_option(buf, "undolevels", ul)
+  api.nvim_buf_set_option(buf, "modified", mod)
+end
+
+--#endregion
 
 return M
